@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #import <UIKit/UIKit.h>
+#import <WebKit/WebKit.h>
 
 @class YTPlayerView;
 
@@ -138,9 +139,9 @@ typedef NS_ENUM(NSInteger, YTPlayerError) {
  * YTPlayerView::loadWithPlaylistId: or their variants to set the video or playlist
  * to populate the view with.
  */
-@interface YTPlayerView : UIView<UIWebViewDelegate>
+@interface YTPlayerView : UIView
 
-@property(nonatomic, strong, nullable, readonly) UIWebView *webView;
+@property(nonatomic, strong, nullable, readonly) WKWebView *webView;
 
 /** A delegate to be notified on playback events. */
 @property(nonatomic, weak, nullable) id<YTPlayerViewDelegate> delegate;
@@ -157,7 +158,8 @@ typedef NS_ENUM(NSInteger, YTPlayerError) {
  * @param videoId The YouTube video ID of the video to load in the player view.
  * @return YES if player has been configured correctly, NO otherwise.
  */
-- (BOOL)loadWithVideoId:(nonnull NSString *)videoId;
+- (BOOL)loadWithVideoId:(nonnull NSString *)videoId
+   webViewConfiguration:(nonnull WKWebViewConfiguration *)configuration;
 
 /**
  * This method loads the player with the given playlist ID.
@@ -195,7 +197,9 @@ typedef NS_ENUM(NSInteger, YTPlayerError) {
  * @param playerVars An NSDictionary of player parameters.
  * @return YES if player has been configured correctly, NO otherwise.
  */
-- (BOOL)loadWithVideoId:(nonnull NSString *)videoId playerVars:(nullable NSDictionary *)playerVars;
+- (BOOL)loadWithVideoId:(nonnull NSString *)videoId
+             playerVars:(nullable NSDictionary *)playerVars
+   webViewConfiguration:(nonnull WKWebViewConfiguration *)configuration;
 
 /**
  * This method loads the player with the given playlist ID and player variables. Player variables
@@ -219,7 +223,8 @@ typedef NS_ENUM(NSInteger, YTPlayerError) {
  * @param playerVars An NSDictionary of player parameters.
  * @return YES if player has been configured correctly, NO otherwise.
  */
-- (BOOL)loadWithPlaylistId:(nonnull NSString *)playlistId playerVars:(nullable NSDictionary *)playerVars;
+- (BOOL)loadWithPlaylistId:(nonnull NSString *)playlistId
+                playerVars:(nullable NSDictionary *)playerVars;
 
 /**
  * This method loads an iframe player with the given player parameters. Usually you may want to use
@@ -232,7 +237,8 @@ typedef NS_ENUM(NSInteger, YTPlayerError) {
  *                               whether a single video or playlist is being loaded.
  * @return YES if successful, NO if not.
  */
-- (BOOL)loadWithPlayerParams:(nullable NSDictionary *)additionalPlayerParams;
+- (BOOL)loadWithPlayerParams:(nullable NSDictionary *)additionalPlayerParams
+        webViewConfiguration:(nonnull WKWebViewConfiguration *)configuration;
 
 #pragma mark - Player controls
 
@@ -269,7 +275,8 @@ typedef NS_ENUM(NSInteger, YTPlayerError) {
  * @param allowSeekAhead Whether to make a new request to the server if the time is
  *                       outside what is currently buffered. Recommended to set to YES.
  */
-- (void)seekToSeconds:(float)seekToSeconds allowSeekAhead:(BOOL)allowSeekAhead;
+- (void)seekToSeconds:(float)seekToSeconds
+       allowSeekAhead:(BOOL)allowSeekAhead;
 
 #pragma mark - Queuing videos
 
@@ -500,42 +507,6 @@ typedef NS_ENUM(NSInteger, YTPlayerError) {
  */
 - (void)playVideoAt:(int)index;
 
-#pragma mark - Setting the playback rate
-
-/**
- * Gets the playback rate. The default value is 1.0, which represents a video
- * playing at normal speed. Other values may include 0.25 or 0.5 for slower
- * speeds, and 1.5 or 2.0 for faster speeds. This method corresponds to the
- * JavaScript API defined here:
- *   https://developers.google.com/youtube/iframe_api_reference#getPlaybackRate
- *
- * @return An integer value between 0 and 100 representing the current volume.
- */
-- (float)playbackRate;
-
-/**
- * Sets the playback rate. The default value is 1.0, which represents a video
- * playing at normal speed. Other values may include 0.25 or 0.5 for slower
- * speeds, and 1.5 or 2.0 for faster speeds. To fetch a list of valid values for
- * this method, call YTPlayerView::getAvailablePlaybackRates. This method does not
- * guarantee that the playback rate will change.
- * This method corresponds to the JavaScript API defined here:
- *   https://developers.google.com/youtube/iframe_api_reference#setPlaybackRate
- *
- * @param suggestedRate A playback rate to suggest for the player.
- */
-- (void)setPlaybackRate:(float)suggestedRate;
-
-/**
- * Gets a list of the valid playback rates, useful in conjunction with
- * YTPlayerView::setPlaybackRate. This method corresponds to the
- * JavaScript API defined here:
- *   https://developers.google.com/youtube/iframe_api_reference#getPlaybackRate
- *
- * @return An NSArray containing available playback rates. nil if there is an error.
- */
-- (nullable NSArray *)availablePlaybackRates;
-
 #pragma mark - Setting playback behavior for playlists
 
 /**
@@ -558,53 +529,7 @@ typedef NS_ENUM(NSInteger, YTPlayerError) {
  */
 - (void)setShuffle:(BOOL)shuffle;
 
-#pragma mark - Playback status
-// These methods correspond to the JavaScript methods defined here:
-//    https://developers.google.com/youtube/js_api_reference#Playback_status
-
-/**
- * Returns a number between 0 and 1 that specifies the percentage of the video
- * that the player shows as buffered. This method corresponds to the
- * JavaScript API defined here:
- *   https://developers.google.com/youtube/iframe_api_reference#getVideoLoadedFraction
- *
- * @return A float value between 0 and 1 representing the percentage of the video
- *         already loaded.
- */
-- (float)videoLoadedFraction;
-
-/**
- * Returns the state of the player. This method corresponds to the
- * JavaScript API defined here:
- *   https://developers.google.com/youtube/iframe_api_reference#getPlayerState
- *
- * @return |YTPlayerState| representing the state of the player.
- */
-- (YTPlayerState)playerState;
-
-/**
- * Returns the elapsed time in seconds since the video started playing. This
- * method corresponds to the JavaScript API defined here:
- *   https://developers.google.com/youtube/iframe_api_reference#getCurrentTime
- *
- * @return Time in seconds since the video started playing.
- */
-- (float)currentTime;
-
 #pragma mark - Playback quality
-
-// Playback quality. These methods correspond to the JavaScript
-// methods defined here:
-//   https://developers.google.com/youtube/js_api_reference#Playback_quality
-
-/**
- * Returns the playback quality. This method corresponds to the
- * JavaScript API defined here:
- *   https://developers.google.com/youtube/iframe_api_reference#getPlaybackQuality
- *
- * @return YTPlaybackQuality representing the current playback quality.
- */
-- (YTPlaybackQuality)playbackQuality;
 
 /**
  * Suggests playback quality for the video. It is recommended to leave this setting to
@@ -614,73 +539,6 @@ typedef NS_ENUM(NSInteger, YTPlayerError) {
  * @param quality YTPlaybackQuality value to suggest for the player.
  */
 - (void)setPlaybackQuality:(YTPlaybackQuality)suggestedQuality;
-
-/**
- * Gets a list of the valid playback quality values, useful in conjunction with
- * YTPlayerView::setPlaybackQuality. This method corresponds to the
- * JavaScript API defined here:
- *   https://developers.google.com/youtube/iframe_api_reference#getAvailableQualityLevels
- *
- * @return An NSArray containing available playback quality levels. Returns nil if there is an error.
- */
-- (nullable NSArray *)availableQualityLevels;
-
-#pragma mark - Retrieving video information
-
-// Retrieving video information. These methods correspond to the JavaScript
-// methods defined here:
-//   https://developers.google.com/youtube/js_api_reference#Retrieving_video_information
-
-/**
- * Returns the duration in seconds since the video of the video. This
- * method corresponds to the JavaScript API defined here:
- *   https://developers.google.com/youtube/iframe_api_reference#getDuration
- *
- * @return Length of the video in seconds.
- */
-- (NSTimeInterval)duration;
-
-/**
- * Returns the YouTube.com URL for the video. This method corresponds
- * to the JavaScript API defined here:
- *   https://developers.google.com/youtube/iframe_api_reference#getVideoUrl
- *
- * @return The YouTube.com URL for the video. Returns nil if no video is loaded yet.
- */
-- (nullable NSURL *)videoUrl;
-
-/**
- * Returns the embed code for the current video. This method corresponds
- * to the JavaScript API defined here:
- *   https://developers.google.com/youtube/iframe_api_reference#getVideoEmbedCode
- *
- * @return The embed code for the current video. Returns nil if no video is loaded yet.
- */
-- (nullable NSString *)videoEmbedCode;
-
-#pragma mark - Retrieving playlist information
-
-// Retrieving playlist information. These methods correspond to the
-// JavaScript defined here:
-//    https://developers.google.com/youtube/js_api_reference#Retrieving_playlist_information
-
-/**
- * Returns an ordered array of video IDs in the playlist. This method corresponds
- * to the JavaScript API defined here:
- *   https://developers.google.com/youtube/iframe_api_reference#getPlaylist
- *
- * @return An NSArray containing all the video IDs in the current playlist. |nil| on error.
- */
-- (nullable NSArray *)playlist;
-
-/**
- * Returns the 0-based index of the currently playing item in the playlist.
- * This method corresponds to the JavaScript API defined here:
- *   https://developers.google.com/youtube/iframe_api_reference#getPlaylistIndex
- *
- * @return The 0-based index of the currently playing item in the playlist.
- */
-- (int)playlistIndex;
 
 #pragma mark - Exposed for Testing
 
